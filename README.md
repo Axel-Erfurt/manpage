@@ -9,3 +9,5 @@ Manuals fürTerminalbefehle in Linux anzeigen
 ## Installation
 
 folgt
+
+![screenshot](https://github.com/Axel-Erfurt/manpage/blob/main/screenshot.png?raw=true)
