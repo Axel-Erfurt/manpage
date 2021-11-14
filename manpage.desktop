@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=ManPage
+Exec=sh -c "~/manpage/manpage"
+Icon=applications-utilities
+Type=Application
+GenericName=ManPage
+Categories=Tools;
+Keywords=Android File Transfer
+Comment=Terminalbefehle

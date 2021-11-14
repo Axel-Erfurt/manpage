@@ -1,0 +1,82 @@
+XED(1)                      General Commands Manual                     XED(1)
+
+NAME
+       Xed - The Text Editor
+
+SYNOPSIS
+       xed [OPTIONS...] [FILES...]
+
+DESCRIPTION
+       Xed  is  the  official text editor of the X-APPS project, which aims to
+       provide applications to the Cinnamon, MATE  and  Xfce  desktops.  While
+       aiming at simplicity and ease of use, Xed is a powerful general purpose
+       text editor. It can be used to create and edit all sorts of text files.
+
+       Xed features a flexible plugin system which can be used to  dynamically
+       add new advanced features to Xed itself.
+
+       This manual page briefly documents the xed command.
+
+OPTIONS
+       filename(s)...
+              Specifies the file to open when xed starts. If this is not spec‐
+              ified, xed will start a new, blank file with an  "Unsaved  Docu‐
+              ment"  label. Multiple files can be loaded if they are separated
+              by spaces. xed also supports handling of remote files.
+
+       --display=DISPLAY
+              X display to use.
+
+       --encoding
+              Set the character encoding to be  used  for  opening  the  files
+              listed on the command line.
+
+       --new-window
+              Create a new toplevel window in an existing instance of xed.
+
+       --new-document
+              Create  a  new  document  in an existing instance of xed, on the
+              last Xed window that had focus.
+
+       +[num] For the first file, go to the line specified by  "num"  (do  not
+              insert  a  space between the "+" sign and the number).  If "num"
+              is missing, go to the last line.
+
+       --list-encodings
+              Display list of possible values for the encoding option and exit
+
+       --version
+              Output version information and exit
+
+       -?, -h, --help
+              Print standard command line options.
+
+       -w, --wait
+              Open files and block the xed process.
+
+       --help-all
+              Print all command line options.
+
+       This program also accepts the standard GTK options.
+
+EXAMPLES
+       xed   --encoding    WINDOWS-1252    ftp://ftp.kernel.org/pub/linux/ker‐
+       nel/README
+           Open  the Linux Kernel README file from kernel.org's FTP server us‐
+           ing Windows-1252 character encoding.
+
+       xed +156 http://www.some-website.com/
+           Open the main web page of some-website.com and jump to line 156.
+
+       xed --new-window ~/.bashrc ~/.bash_history
+           Open the current users .bashrc and .bash_history  files  in  a  new
+           window.
+
+BUGS
+   Should you encounter any bugs, they may be reported at:
+       http://github.com/linuxmint/xed/issues
+
+SEE ALSO
+   Xed  documentation can be found from the "Help" menu, or by pressing the F1
+       key.
+                                                                        XED(1)

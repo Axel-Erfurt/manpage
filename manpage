@@ -1,0 +1,3 @@
+#!/bin/sh
+cd ~/manpage
+python3 ./manpage.py

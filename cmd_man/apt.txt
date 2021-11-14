@@ -1,0 +1,173 @@
+APT(8)                                APT                               APT(8)
+
+NAME
+       apt - Befehlszeilenschnittstelle
+
+ÜBERSICHT
+       apt [-h] [-o=Konfigurationszeichenkette] [-c=Konfigurationsdatei]
+           [-t=Ziel-Release] [-a=Architektur] {list | search | show | update |
+           install Paket [{=Paketversionsnummer | /Ziel-Release}]... |
+           remove Paket... | upgrade | full-upgrade | edit-sources |
+           {-v | --version} | {-h | --help}}
+
+BESCHREIBUNG
+       apt stellt eine hoch abstrahierte Befehlszeilenschnittstelle für das
+       Paketverwaltungssystem zur Verfügung. Es ist als
+       Endanwenderschnittstelle gedacht und aktiviert verglichen mit
+       spezialisierteren Werkzeugen wie apt-get(8) und apt-cache(8)
+       standardmäßig einige für den interaktiven Gebrauch besser geeignete
+       Optionen.
+
+       Ganz wie apt selbst ist seine Handbuchseite als
+       Endanwenderschnittstelle gedacht und erwähnt als solche nur die am
+       häufigsten benutzten Befehle sowie Optionen. Dies geschieht zum Teil,
+       um keine Informationen an mehreren Stellen zu duplizieren und zum Teil,
+       um Leser nicht mit einem Überfluss an Optionen und Einzelheiten zu
+       überwältigen.
+
+       update (apt-get(8))
+           update wird verwendet, um von allen konfigurierten Quellen
+           Paketinformationen herunterzuladen. Andere Befehle arbeiten mit
+           diesen Daten, zum Beispiel, um Paket-Upgrades durchzuführen oder um
+           darin zu suchen und um Einzelheiten über alle zur Installation
+           verfügbaren Pakete anzuzeigen.
+
+       upgrade (apt-get(8))
+           upgrade wird verwendet, um verfügbare Upgrades für alle derzeit auf
+           dem System installierten Pakete von den in der sources.list(5)
+           konfigurierten Quellen zu installieren. Neue Pakete werden
+           installiert, falls dies nötig ist, um Abhängigkeiten zu erfüllen,
+           existierende werden jedoch nie entfernt. Falls das Upgrade für ein
+           Paket verlangt, dass ein installiertes Paket entfernt wird, wird
+           dieses Upgrade nicht durchgeführt.
+
+       full-upgrade (apt-get(8))
+           full-upgrade verrichtet die Funktion von »upgrade«, wird aber auch
+           installierte Pakete entfernen, falls dies erforderlich ist, um ein
+           Upgrade des Systems als Ganzes durchzuführen.
+
+       install, reinstall, remove, purge (apt-get(8))
+           führt die angefragte Aktion für eines oder mehrere Pakete durch,
+           die über regex(7), glob(7) oder exakten Treffer angegeben wurden.
+           Die angefragte Aktion kann für spezielle Pakete außer Kraft gesetzt
+           werden, indem ein Plus (+) an den Paketnamen angehängt wird, um
+           dieses Paket zu installieren oder ein Minus (-), um es zu
+           entfernen.
+
+           Eine bestimmte Version eines Paketes kann durch den Paketnamen
+           gefolgt von einem Gleichheitszeichen (=) und der Version des
+           Paketes zur Installation ausgewählt werden. Alternativ kann die
+           Version aus einer bestimmten Veröffentlichung ausgewählt werden,
+           indem dem Paketnamen ein Vorwärtsschrägstrich und Codename
+           ((buster, bullseye, sid ...) oder Name der Programmsammlung
+           (stable, testing, unstable) folgt. Dies wird außerdem Versionen aus
+           dieser Veröffentlichung für Abhängigkeiten dieses Pakets auswählen,
+           falls dies zum Erfüllen der Anfrage nötig ist.
+
+           Entfernen eines Pakets entfernt alle paketierten Daten, hinterlässt
+           jedoch üblicherweise kleine (veränderte)
+           Benutzerkonfigurationsdateien für den Fall, dass das Entfernen
+           unbeabsichtigt geschah. Das bloße Eingeben einer
+           Installationsanfrage für das versehentlich entfernte Paket wird
+           seine Funktionen wieder so herstellen, wie sie vorher waren.
+           Andererseits können Sie diese Überbleibsel durch den Aufruf von
+           purge loswerden, sogar bei bereits entfernten Paketen. Beachten
+           Sie, dass dies keine Daten oder Konfigurationsdateien betrifft, die
+           in Ihrem Home-Verzeichnis gespeichert sind.
+
+       autoremove (apt-get(8))
+           autoremove wird benutzt, um Pakete zu entfernen, die automatisch
+           installiert wurden, um Abhängigkeiten für andere Pakete zu erfüllen
+           und die nicht mehr benötigt werden, da sich die Abhängigkeiten
+           geändert haben oder die Pakete, die sie benötigten, in der
+           Zwischenzeit entfernt wurden.
+
+           Sie sollten prüfen, ob die Liste keine Anwendungen enthält, die sie
+           zu schätzen gelernt haben, obwohl sie nur als Abhängigkeit eines
+           anderen Pakets installiert wurden. Sie können solch ein Paket
+           mittels apt-mark(8) als manuell installiert markieren. Pakete, die
+           Sie explizit per install installiert haben, werden niemals zum
+           automatischen Entfernen vorgeschlagen.
+
+       satisfy (apt-get(8))
+           satisfy erfüllt Abhängigkeitszeichenketten, wie sie in
+           Build-Depends benutzt werden. Es handhabt auch Konflikte, indem es
+           einem Argument ein "Conflicts: " voranstellt.
+
+           Beispiel: apt satisfy "foo, bar (>= 1.0)" "Conflicts: baz, fuzz"
+
+       search (apt-cache(8))
+           search kann zur Suche nach den angegebenen regex(7)-Begriffen in
+           der Liste verfügbarer Pakete und zur Anzeige der Treffer benutzt
+           werden. Dies kann z.B. nützlich sein, wenn Sie nach Paketen suchen,
+           die eine bestimmte Funktionalität bieten. Falls Sie nach einem
+           Paket suchen, das eine bestimmte Datei enthält, probieren Sie es
+           mit apt-file(1).
+
+       show (apt-cache(8))
+           zeigt Informationen über die angegebenen Pakete einschließlich
+           ihrer Abhängigkeiten, Installations- und Herunterladegröße,
+           Quellen, in denen das Paket verfügbar ist, der Beschreibung des
+           Paketinhalts und vieles mehr. Es kann z.B. hilfreich sein, einen
+           Blick auf diese Informationen zu werfen, bevor Sie apt(8)
+           gestatten, ein Paket zu entfernen oder wenn Sie neue Pakete zur
+           Installation suchen.
+
+       list
+           list ist dpkg-query --list insofern ziemlich ähnlich, als dass es
+           eine Liste von Paketen anzeigen kann, die bestimmte Kriterien
+           erfüllen. Es unterstützt glob(7)-Muster zum Abgleich von Paketnamen
+           ebenso wie Optionen zum Auflisten von installierten (--installed)
+           Versionen, solchen, von denen ein Upgrade durchgeführt werden kann
+           (--upgradeable) oder allen verfügbaren (--all-versions).
+
+       edit-sources (in Arbeit)
+           edit-sources ermöglicht die Bearbeitung Ihrer
+           sources.list(5)-Dateien in Ihrem bevorzugten Texteditor und stellt
+           außerdem grundlegende Plausibilitätsprüfungen bereit.
+
+SKRIPTAUFRUF UND UNTERSCHIEDE ZU ANDEREN APT-WERKZEUGEN
+       Die apt(8)-Befehlszeile wurde als Endanwenderwerkzeug entworfen und
+       kann bei Versionswechseln ihr Verhalten ändern. Obwohl sie versucht,
+       nicht die Abwärtskompatibilität zu beschädigen, kann dies nicht
+       garantiert werden, wenn eine Änderung vorteilhaft für den interaktiven
+       Gebrauch zu sein scheint.
+
+       Alle Funktionalitäten von apt(8) sind in APT-zugehörigen Werkzeugen wie
+       apt-cache(8) und apt-get(8) ebenfalls verfügbar.apt(8) ändert nur den
+       Vorgabewert einiger Optionen (siehe apt.conf(5) und insbesondere den
+       Geltungsbereich des Programms). Daher sollten Sie vorzugsweise diese
+       Befehle (unter Umständen mit einigen zusätzlichen aktivierten Optionen)
+       in Ihren Skripten verwenden, da sie die Abwärtskompatibilität so weit
+       wie möglich aufrechterhalten.
+
+SIEHE AUCH
+       apt-get(8), apt-cache(8), sources.list(5), apt.conf(5), apt-config(8),
+       die APT-Benutzeranleitung in /usr/share/doc/apt-doc/,
+       apt_preferences(5), das APT-Howto.
+
+DIAGNOSE
+       apt gibt bei normalen Aktionen 0 zurück, dezimal 100 bei Fehlern.
+
+FEHLER
+       APT-Fehlerseite[1]. Wenn Sie einen Fehler in APT berichten möchten,
+       lesen Sie bitte /usr/share/doc/debian/bug-reporting.txt oder den
+       reportbug(1)-Befehl. Verfassen Sie Fehlerberichte bitte auf Englisch.
+
+ÜBERSETZUNG
+       Die deutsche Übersetzung wurde 2009 von Chris Leick
+       <c.leick@vollbio.de> in Zusammenarbeit mit dem deutschen l10n-Team von
+       Debian <debian-l10n-german@lists.debian.org> angefertigt.
+
+       Beachten Sie, dass diese Übersetzung Teile enthalten kann, die nicht
+       übersetzt wurden. Dies ist so, damit kein Inhalt verloren geht, wenn
+       die Übersetzung hinter dem Originalinhalt hinterherhängt.
+
+AUTOR
+       APT-Team
+
+FUßNOTEN
+        1. APT-Fehlerseite
+           http://bugs.debian.org/src:apt
+
+APT 2.0.6                        05 April 2020                          APT(8)
