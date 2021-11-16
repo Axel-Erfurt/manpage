@@ -2,55 +2,11 @@
 # -*- coding: utf-8 -*-
 
 import gi
-gi.require_versions({'Gtk': '3.0', 'Gdk': '3.0'})
-from gi.repository import Gtk, Gdk, Gio
+gi.require_versions({'Gtk': '3.0'})
+from gi.repository import Gtk, Gio
 import os
 from subprocess import check_output
-
-CSS = """
-window {
-    background: #c9c9c9;
-}
-textview text {
-    background: #e6e6e6;
-}
-entry {
-    font-size: 8pt;
-    margin-top: 10px;
-    margin-bottom: 10px;
-    background: #d9d9d9;
-}
-searchentry {
-    font-size: 8pt;
-    margin-top: 10px;
-    margin-bottom: 10px;
-    background: #eeeeec;
-}
-headerbar {
-    font-size: 11pt;
-    min-height: 28px;
-    padding-left: 2px;
-    padding-right: 2px;
-    margin: 0px;
-    padding: 5px;
-    border: 0px;
-    background: #c9c9c9;
-}
-headerbar entry,
-headerbar button,
-headerbar separator {
-    font-size: 8pt;
-    margin-top: 0px;
-    margin-bottom: 0px;
-    padding: 1px;
-}
-statusbar {
-    font-size: 8pt;
-    color: #444;
-    background: #c9c9c9;
-    margin: 0px;
-}
-"""
+import string
 
 class ManViewer(Gtk.Window):
     def __init__(self):
@@ -70,20 +26,56 @@ class ManViewer(Gtk.Window):
         hb.props.subtitle = "Terminal Befehle"
         self.set_titlebar(hb)
         
-        # style
-        provider = Gtk.CssProvider()
-        provider.load_from_data(bytes(CSS.encode()))
-        style = self.get_style_context()
-        screen = Gdk.Screen.get_default()
-        priority = Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
-        style.add_provider_for_screen(screen, provider, priority)
-        
         btn_style_up = Gtk.Image.new_from_gicon(Gio.ThemedIcon(name="down"), Gtk.IconSize.MENU)
         self.cmd_combo = Gtk.MenuButton(label="Manuals  ", image=btn_style_up)
         self.cmd_combo.props.relief = 2
         self.cmd_menu = Gtk.Menu()
         self.cmd_combo.set_popup(self.cmd_menu) 
         hb.pack_start(self.cmd_combo)
+        
+            # alle befehle
+        if os.path.isfile("Liste.txt"):
+            btn_style_up = Gtk.Image.new_from_gicon(Gio.ThemedIcon(name="down"), Gtk.IconSize.MENU)
+            self.list_combo = Gtk.MenuButton(label="Manuals a-z ", image=btn_style_up)
+            self.list_combo.props.relief = 2
+            
+            menu = Gtk.Menu()
+            self.list_combo.set_popup(menu) 
+        
+            befehlsliste = open("Liste.txt", "r").read().splitlines()
+            letters = list(string.ascii_lowercase)
+            for x in range(len(letters)):
+                item = Gtk.MenuItem(label=letters[x])
+                menu.append(item)
+                sub_menu = Gtk.Menu()
+                
+                for befehl in befehlsliste:
+                    if befehl.startswith(letters[x]):
+                        befehl = befehl.split(" ")[0]
+                        menuitem = Gtk.MenuItem(label=befehl)
+                        menuitem.connect("activate", self.on_menuitem_activated)
+                        sub_menu.append(menuitem)
+                
+                item.set_submenu(sub_menu)
+
+            # numbers
+            item = Gtk.MenuItem(label="1-9")
+            menu.append(item)
+            sub_menu = Gtk.Menu()
+            for befehl in befehlsliste:
+                first = befehl[:1]
+                if first.isnumeric():
+                    befehl = befehl.split(" ")[0]
+                    if befehl != "":
+                        menuitem = Gtk.MenuItem(label=befehl)
+                        menuitem.connect("activate", self.on_menuitem_activated)
+                        sub_menu.append(menuitem)
+            item.set_submenu(sub_menu)
+            
+            
+            menu.show_all()
+        
+            hb.pack_start(self.list_combo)
         
         self.find_field = Gtk.SearchEntry(placeholder_text="im Text suchen", tooltip_text="im Text suchen")
         self.find_field.connect("activate", self.find_text)
@@ -102,7 +94,7 @@ class ManViewer(Gtk.Window):
         hb.pack_end(self.cmd_field)
         
         self.buffer = Gtk.TextBuffer()
-        self.cmd_viewer = Gtk.TextView(vexpand=True, hexpand=True, left_margin=10)
+        self.cmd_viewer = Gtk.TextView(vexpand=True, hexpand=True, left_margin=10, editable=False)
         
         ### tags for search color
         self.tag_found = self.buffer.create_tag("found", background="#edd400")
@@ -125,6 +117,13 @@ class ManViewer(Gtk.Window):
         self.fill_combo()
         self.cmd_field.grab_focus()
         
+    def on_menuitem_activated(self, menuitem, *args):      
+        cmd = menuitem.get_label()
+        self.cmd_field.set_text(cmd)
+        self.run_cmd()
+        self.statusbar.push(0, f"{cmd} geladen")
+
+        
     def fill_combo(self, *args):
         for i in self.cmd_menu.get_children():
             self.cmd_menu.remove(i)
@@ -132,7 +131,6 @@ class ManViewer(Gtk.Window):
         for root, dirs, files in os.walk(self.cmd_folder, topdown = False):
            for name in files:
               if name.endswith(".txt"):
-                #print(os.path.join(root, name))
                 cmd_list.append(name.replace(".txt", ""))
         cmd_list.sort(key=str.lower)
         for cmd_file in cmd_list:
@@ -148,14 +146,19 @@ class ManViewer(Gtk.Window):
             self.buffer.set_text(data)
             self.cmd_viewer.set_buffer(self.buffer)
             self.statusbar.push(0, f"{menuitem.get_label()} geladen")
+            self.cmd_field.set_text("")
 
     def run_cmd(self, *args):
         cmd = self.cmd_field.get_text()
         if len(cmd) > 1:
             try:
+                self.cmd_viewer.grab_focus()
                 data = check_output(f"man {cmd}", shell = True).decode()
                 self.buffer.set_text(data)
                 self.cmd_viewer.set_buffer(self.buffer)
+                start_iter = self.buffer.get_start_iter()
+                self.buffer.place_cursor(start_iter)
+                self.cmd_viewer.scroll_to_iter(start_iter, 0.0, True, 0.0, 0.0)
             except:
                 self.buffer.set_text("")
                 self.statusbar.push(0, "kein Handbucheintrag vorhanden!")
