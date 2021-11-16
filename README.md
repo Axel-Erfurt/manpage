@@ -15,6 +15,7 @@ Manuals für Terminalbefehle in Linux anzeigen
 	cp -rf /tmp/manpage ~/manpage
 	cp ~/manpage/manpage.desktop ~/.local/share/applications
 	chmod +x ~/manpage/manpage
+	find ${PATH//:/ } -type f -exec basename {} \; | xargs whatis | sort > ~/manpage/Liste.txt
 
 ## Start 
 
