@@ -32,6 +32,23 @@ class ManViewer(Gtk.Window):
         self.cmd_menu = Gtk.Menu()
         self.cmd_combo.set_popup(self.cmd_menu) 
         hb.pack_start(self.cmd_combo)
+            
+        
+        self.find_field = Gtk.SearchEntry(placeholder_text="im Text suchen", tooltip_text="im Text suchen")
+        self.find_field.connect("activate", self.find_text)
+        self.find_field.connect("search_changed", self.on_search_changed)
+                                   
+        save_button = Gtk.Button(tooltip_text = "speichern")
+        save_button.props.relief = 2
+        save_button.connect("clicked", self.save_cmd)
+        icon = Gio.ThemedIcon(name="document-save")
+        image = Gtk.Image.new_from_gicon(icon, Gtk.IconSize.SMALL_TOOLBAR)
+        save_button.add(image)
+        hb.pack_end(save_button)
+        
+        self.cmd_field = Gtk.Entry(placeholder_text="Befehl eingeben -> ENTER", tooltip_text="Befehl eingeben -> ENTER")
+        self.cmd_field.connect("activate", self.run_cmd)
+        hb.pack_end(self.cmd_field)
         
             # alle befehle
         if os.path.isfile("Liste.txt"):
@@ -76,22 +93,24 @@ class ManViewer(Gtk.Window):
             menu.show_all()
         
             hb.pack_start(self.list_combo)
-        
-        self.find_field = Gtk.SearchEntry(placeholder_text="im Text suchen", tooltip_text="im Text suchen")
-        self.find_field.connect("activate", self.find_text)
-        self.find_field.connect("search_changed", self.on_search_changed)
-                                   
-        save_button = Gtk.Button(tooltip_text = "speichern")
-        save_button.props.relief = 2
-        save_button.connect("clicked", self.save_cmd)
-        icon = Gio.ThemedIcon(name="document-save")
-        image = Gtk.Image.new_from_gicon(icon, Gtk.IconSize.SMALL_TOOLBAR)
-        save_button.add(image)
-        hb.pack_end(save_button)
-        
-        self.cmd_field = Gtk.Entry(placeholder_text="Befehl eingeben -> ENTER", tooltip_text="Befehl eingeben -> ENTER")
-        self.cmd_field.connect("activate", self.run_cmd)
-        hb.pack_end(self.cmd_field)
+            
+            # entry completion
+            self.liststore = Gtk.ListStore(str)
+            self.completion = Gtk.EntryCompletion()
+            self.completion.set_model(self.liststore)
+            self.completion.set_text_column(0)
+            
+            for befehl in befehlsliste:
+                befehl = befehl.split(" ")[0]
+                self.liststore.append([befehl])  
+            
+            self.cmd_field.set_completion(self.completion)
+            self.completion.complete()  
+            self.completion.set_text_column(0)
+            self.completion.set_minimum_key_length(1)
+            
+            self.completion.set_match_func(self.match_func, None)
+            self.completion.connect("match-selected", self.on_completion_match)
         
         self.buffer = Gtk.TextBuffer()
         self.cmd_viewer = Gtk.TextView(vexpand=True, hexpand=True, left_margin=10, editable=False)
@@ -116,6 +135,30 @@ class ManViewer(Gtk.Window):
         
         self.fill_combo()
         self.cmd_field.grab_focus()
+        
+    def match_func(self, completion, key_string, iter, data):
+        model = self.completion.get_model()
+        modelstr = model[iter][0]
+
+        if " " in key_string:
+            last_word = key_string.split()[-1]
+            return modelstr.startswith(last_word)
+
+        return modelstr.startswith(key_string)
+
+    def on_completion_match(self, completion, model, iter):
+        current_text = self.cmd_field.get_text()
+        
+        if " " in current_text:
+            current_text = " ".join(current_text.split()[:-1])
+            current_text = "%s %s" % (current_text, model[iter][0])
+        else:
+            current_text = model[iter][0]
+
+        current_text = model[iter][0]
+        self.cmd_field.set_text(current_text)
+        self.run_cmd()
+        return True
         
     def on_menuitem_activated(self, menuitem, *args):      
         cmd = menuitem.get_label()
