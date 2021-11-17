@@ -202,6 +202,7 @@ class ManViewer(Gtk.Window):
                 start_iter = self.buffer.get_start_iter()
                 self.buffer.place_cursor(start_iter)
                 self.cmd_viewer.scroll_to_iter(start_iter, 0.0, True, 0.0, 0.0)
+                self.statusbar.push(0, f"{cmd} geladen")
             except:
                 self.buffer.set_text("")
                 self.statusbar.push(0, "kein Handbucheintrag vorhanden!")
