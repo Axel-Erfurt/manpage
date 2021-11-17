@@ -37,6 +37,9 @@ class ManViewer(Gtk.Window):
         self.find_field = Gtk.SearchEntry(placeholder_text="im Text suchen", tooltip_text="im Text suchen")
         self.find_field.connect("activate", self.find_text)
         self.find_field.connect("search_changed", self.on_search_changed)
+
+        self.apropos_field = Gtk.SearchEntry(placeholder_text="apropos", tooltip_text="mit apropos suchen")
+        self.apropos_field.connect("activate", self.find_with_apropos)
                                    
         save_button = Gtk.Button(tooltip_text = "speichern")
         save_button.props.relief = 2
@@ -127,6 +130,19 @@ class ManViewer(Gtk.Window):
         vbox = Gtk.VBox()
         vbox.add(self.scrollview)
         hbox.pack_start(self.find_field, False, False, 2)
+        hbox.pack_end(self.apropos_field, False, False, 2)
+        
+        self.apropos_store = Gtk.ListStore(str)
+        self.apropos_box = Gtk.ComboBox.new_with_model(self.apropos_store)
+        self.apropos_box.set_direction(1)
+        self.apropos_box.set_popup_fixed_width(True)
+        self.apropos_box.connect("changed", self.apropos_box_changed)
+        renderer_text = Gtk.CellRendererText()
+        self.apropos_box.pack_start(renderer_text, True)
+        self.apropos_box.add_attribute(renderer_text, "text", 0)
+        
+        hbox.pack_end(self.apropos_box, False, False, 2)
+        
         vbox.pack_start(hbox, False, False, 2)
         vbox.pack_end(self.statusbar, False, False, 0)
         self.add(vbox)
@@ -255,7 +271,26 @@ class ManViewer(Gtk.Window):
             match_start, match_end = match
             self.buffer.apply_tag(self.tag_found, match_start, match_end)
             self.search_and_mark(text, match_end)
-
+            
+    def find_with_apropos(self, widget, *args):
+        self.apropos_store.clear()
+        apropos_content = check_output(f"apropos {widget.get_text()}", shell=True).decode()
+        self.buffer.set_text(apropos_content)
+        self.cmd_viewer.set_buffer(self.buffer)
+        for line in apropos_content.splitlines():
+            cmd = line.split(" ")[0]
+            self.apropos_store.append([cmd])
+            
+    def apropos_box_changed(self, combo, *args):
+        tree_iter = combo.get_active_iter()
+        if tree_iter is not None:
+            model = combo.get_model()
+            cmd = model[tree_iter][0]
+            self.cmd_field.set_text(cmd)    
+            self.run_cmd()
+            self.apropos_field.set_text("")
+        
+        
 window = ManViewer()
 window.show_all()
 window.move(0, 0)
