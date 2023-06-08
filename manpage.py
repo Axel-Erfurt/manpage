@@ -2,15 +2,38 @@
 # -*- coding: utf-8 -*-
 
 import gi
-gi.require_versions({'Gtk': '3.0'})
-from gi.repository import Gtk, Gio
+gi.require_versions({'Gtk': '3.0', 'Gdk': '3.0'})
+from gi.repository import Gtk, Gio, Gdk
 import os
 from subprocess import check_output
 import string
 
+CSS = """
+textview {
+    font-size: 12px;
+    font-family: Ubuntu;
+}
+textview text {
+    background-color: @theme_bg_color;
+    color: @theme_fg_color;
+}
+textview text selection {
+  background-color: @theme_selected_bg_color;
+  color: @theme_selected_color;
+}
+"""
+
 class ManViewer(Gtk.Window):
     def __init__(self):
         Gtk.Window.__init__(self)
+        
+        # style
+        provider = Gtk.CssProvider()
+        provider.load_from_data(bytes(CSS.encode()))
+        style = self.get_style_context()
+        screen = Gdk.Screen.get_default()
+        priority = Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+        style.add_provider_for_screen(screen, provider, priority)
         
         self.set_title("ManViewer")
         self.set_icon_name("applications-utilities")
@@ -35,7 +58,7 @@ class ManViewer(Gtk.Window):
             
         
         self.find_field = Gtk.SearchEntry(placeholder_text="im Text suchen", tooltip_text="im Text suchen")
-        self.find_field.connect("activate", self.find_text)
+        self.find_field.connect("activate", self.on_find)
         self.find_field.connect("search_changed", self.on_search_changed)
 
         self.apropos_field = Gtk.SearchEntry(placeholder_text="apropos", tooltip_text="mit apropos suchen")
@@ -119,7 +142,9 @@ class ManViewer(Gtk.Window):
         self.cmd_viewer = Gtk.TextView(vexpand=True, hexpand=True, left_margin=10, editable=False)
         
         ### tags for search color
-        self.tag_found = self.buffer.create_tag("found", background="#edd400")
+        #self.tag_found = self.buffer.create_tag("found", background="lightblue")
+        self.tag_found = self.buffer.create_tag("found", background="#729fcf", 
+                                                foreground="#2e3436")
         
         self.scrollview = Gtk.ScrolledWindow()
         self.scrollview.add(self.cmd_viewer)
@@ -129,7 +154,7 @@ class ManViewer(Gtk.Window):
         hbox = Gtk.HBox()
         vbox = Gtk.VBox()
         vbox.add(self.scrollview)
-        hbox.pack_start(self.find_field, False, False, 2)
+        hbox.pack_start(self.find_field, False, False, 10)
         hbox.pack_end(self.apropos_field, False, False, 2)
         
         self.apropos_store = Gtk.ListStore(str)
@@ -143,7 +168,7 @@ class ManViewer(Gtk.Window):
         
         hbox.pack_end(self.apropos_box, False, False, 2)
         
-        vbox.pack_start(hbox, False, False, 2)
+        vbox.pack_start(hbox, False, False, 10)
         vbox.pack_end(self.statusbar, False, False, 0)
         self.add(vbox)
         
@@ -244,33 +269,30 @@ class ManViewer(Gtk.Window):
             self.fill_combo()
         else:
             self.statusbar.push(0, "kein Befehl eingegeben oder kein Handbucheintrag vorhanden!")
-
                 
     ### find all occurences in editor and select
     def on_search_changed(self, widget):
-        start = self.buffer.get_start_iter()
-        end = self.buffer.get_end_iter()
-        self.buffer.remove_all_tags(start, end)
-        self.find_text()
-        
-    def find_text(self, *args):
-        search_text = self.find_field.get_text()
-        if not search_text == "":
-            start = self.buffer.get_start_iter() ###get_iter_at_mark(cursor_mark)
-            if start.get_offset() == self.buffer.get_char_count():
-                start = self.buffer.get_start_iter()
+        self.on_find(self.find_field)
 
-            self.search_and_mark(search_text, start)
-
-    ### mark matches
-    def search_and_mark(self, text, start):
-        end = self.buffer.get_end_iter()
-        match = start.forward_search(text, 0, end)
-
+    def select_text(self, text):
+        cursor_mark = self.buffer.get_insert()
+        start = self.buffer.get_iter_at_mark(cursor_mark)
+        selecton_mark = self.buffer.get_selection_bound()
+        selected = self.buffer.get_iter_at_mark(selecton_mark)
+        if start.get_offset() < selected.get_offset():
+            start = selected
+        match = start.forward_search(text, 0, None)
+        if match is None:
+            start = self.buffer.get_start_iter()
+            match = start.forward_search(text, 0, None)
         if match is not None:
             match_start, match_end = match
-            self.buffer.apply_tag(self.tag_found, match_start, match_end)
-            self.search_and_mark(text, match_end)
+            self.buffer.select_range(match_start, match_end)
+            self.cmd_viewer.scroll_mark_onscreen(self.buffer.get_insert())
+        return match
+
+    def on_find(self, entry):
+        self.select_text(entry.get_text())
             
     def find_with_apropos(self, widget, *args):
         self.apropos_store.clear()
